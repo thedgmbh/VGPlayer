@@ -48,7 +48,8 @@ public enum VGPlayerViewPanGestureDirection: Int {
 
 
 open class VGPlayerView: UIView {
-    
+	
+	open var isDraging = false
     weak open var vgPlayer : VGPlayer?
     open var controlViewDuration : TimeInterval = 5.0  /// default 5.0
     open fileprivate(set) var playerLayer : AVPlayerLayer?
