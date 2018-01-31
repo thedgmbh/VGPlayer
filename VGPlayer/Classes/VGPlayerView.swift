@@ -50,6 +50,7 @@ public enum VGPlayerViewPanGestureDirection: Int {
 open class VGPlayerView: UIView {
 	
 	open var isDraging = false
+	open var autoAddOnRoot = false
     weak open var vgPlayer : VGPlayer?
     open var controlViewDuration : TimeInterval = 5.0  /// default 5.0
     open fileprivate(set) var playerLayer : AVPlayerLayer?
@@ -576,6 +577,9 @@ extension VGPlayerView {
         }
     }
     internal func onDeviceOrientation(_ fullScreen: Bool, orientation: UIInterfaceOrientation) {
+		
+		if !autoAddOnRoot { return }
+		
         let statusBarOrientation = UIApplication.shared.statusBarOrientation
         if orientation == statusBarOrientation {
             if orientation == .landscapeLeft || orientation == .landscapeLeft {
