@@ -272,13 +272,13 @@ extension VGPlayerView {
             parentView = (self.superview)!
             viewFrame = self.frame
         }
-        UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
-        UIApplication.shared.statusBarOrientation = .landscapeRight
+//        UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
+//        UIApplication.shared.statusBarOrientation = .landscapeRight
         UIApplication.shared.setStatusBarHidden(false, with: .fade)
     }
     
     open func exitFullscreen() {
-        UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+//        UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
         UIApplication.shared.statusBarOrientation = .portrait
     }
     
