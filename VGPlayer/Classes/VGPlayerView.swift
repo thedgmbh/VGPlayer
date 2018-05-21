@@ -48,9 +48,9 @@ public enum VGPlayerViewPanGestureDirection: Int {
 
 
 open class VGPlayerView: UIView {
-	
-	open var isDraging = false
-	open var autoAddOnRoot = false
+    
+    open var isDraging = false
+    open var autoAddOnRoot = false
     weak open var vgPlayer : VGPlayer?
     open var controlViewDuration : TimeInterval = 5.0  /// default 5.0
     open fileprivate(set) var playerLayer : AVPlayerLayer?
@@ -88,6 +88,14 @@ open class VGPlayerView: UIView {
         view.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 0.5)
         return view
     }()
+    
+    open var centerView : UIView = {
+        let view = UIView()
+        view.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 0.5)
+        view.layer.cornerRadius = 25
+        return view
+    }()
+    
     open var timeSlider = VGPlayerSlider ()
     open var loadingIndicator = VGPlayerLoadingIndicator()
     open var fullscreenButton : UIButton = UIButton(type: UIButtonType.custom)
@@ -134,7 +142,7 @@ open class VGPlayerView: UIView {
         playerLayer?.removeFromSuperlayer()
         NotificationCenter.default.removeObserver(self)
     }
-
+    
     open override func layoutSubviews() {
         super.layoutSubviews()
         updateDisplayerView(frame: bounds)
@@ -218,6 +226,7 @@ open class VGPlayerView: UIView {
         backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         configurationTopView()
         configurationBottomView()
+        configurationCenterView()
         configurationReplayButton()
         setupViewAutoLayout()
     }
@@ -265,20 +274,20 @@ extension VGPlayerView {
             }
         }
     }
-
+    
     open func enterFullscreen() {
         let statusBarOrientation = UIApplication.shared.statusBarOrientation
         if statusBarOrientation == .portrait{
             parentView = (self.superview)!
             viewFrame = self.frame
         }
-//        UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
-//        UIApplication.shared.statusBarOrientation = .landscapeRight
+        //        UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
+        //        UIApplication.shared.statusBarOrientation = .landscapeRight
         UIApplication.shared.setStatusBarHidden(false, with: .fade)
     }
     
     open func exitFullscreen() {
-//        UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+        //        UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
         UIApplication.shared.statusBarOrientation = .portrait
     }
     
@@ -314,10 +323,12 @@ extension VGPlayerView {
     internal func displayControlAnimation() {
         bottomView.isHidden = false
         topView.isHidden = false
+        centerView.isHidden = false
         isDisplayControl = true
         UIView.animate(withDuration: 0.5, animations: {
             self.bottomView.alpha = 1
             self.topView.alpha = 1
+            self.centerView.alpha = 1
         }) { (completion) in
             self.setupTimer()
         }
@@ -328,9 +339,11 @@ extension VGPlayerView {
         UIView.animate(withDuration: 0.5, animations: {
             self.bottomView.alpha = 0
             self.topView.alpha = 0
+            self.centerView.alpha = 0
         }) { (completion) in
             self.bottomView.isHidden = true
             self.topView.isHidden = true
+            self.centerView.isHidden = true
         }
     }
     internal func setupTimer() {
@@ -338,7 +351,7 @@ extension VGPlayerView {
         timer = Timer.vgPlayer_scheduledTimerWithTimeInterval(self.controlViewDuration, block: {  [weak self]  in
             guard let strongSelf = self else { return }
             strongSelf.displayControlView(false)
-        }, repeats: false)
+            }, repeats: false)
     }
     internal func addDeviceOrientationNotifications() {
         NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationWillChange(_:)), name: .UIApplicationWillChangeStatusBarOrientation, object: nil)
@@ -540,7 +553,7 @@ extension VGPlayerView {
     internal func panGestureVertical(_ velocityY: CGFloat) {
         isVolume ? (volumeSlider.value -= Float(velocityY / 10000)) : (UIScreen.main.brightness -= velocityY / 10000)
     }
-
+    
     @objc internal func onCloseView(_ sender: UIButton) {
         delegate?.vgPlayerView(didTappedClose: self)
     }
@@ -577,9 +590,9 @@ extension VGPlayerView {
         }
     }
     internal func onDeviceOrientation(_ fullScreen: Bool, orientation: UIInterfaceOrientation) {
-		
-		if !autoAddOnRoot { return }
-		
+        
+        if !autoAddOnRoot { return }
+        
         let statusBarOrientation = UIApplication.shared.statusBarOrientation
         if orientation == statusBarOrientation {
             if orientation == .landscapeLeft || orientation == .landscapeLeft {
@@ -627,7 +640,7 @@ extension VGPlayerView {
 
 //MARK: - UI autoLayout
 extension VGPlayerView {
-
+    
     internal func configurationReplayButton() {
         addSubview(self.replayButton)
         let replayImage = VGPlayerUtils.imageResource("VGPlayer_ic_replay")
@@ -646,6 +659,17 @@ extension VGPlayerView {
         topView.addSubview(closeButton)
     }
     
+    internal func configurationCenterView() {
+        addSubview(centerView)
+        
+        let playImage = VGPlayerUtils.imageResource("VGPlayer_ic_play")
+        let pauseImage = VGPlayerUtils.imageResource("VGPlayer_ic_pause")
+        playButtion.setImage(VGPlayerUtils.imageSize(image: playImage!, scaledToSize: CGSize(width: 15, height: 15)), for: .normal)
+        playButtion.setImage(VGPlayerUtils.imageSize(image: pauseImage!, scaledToSize: CGSize(width: 15, height: 15)), for: .selected)
+        playButtion.addTarget(self, action: #selector(onPlayerButton(_:)), for: .touchUpInside)
+        centerView.addSubview(playButtion)
+    }
+    
     internal func configurationBottomView() {
         addSubview(bottomView)
         timeSlider.addTarget(self, action: #selector(timeSliderValueChanged(_:)),
@@ -657,13 +681,6 @@ extension VGPlayerView {
         loadingIndicator.startAnimating()
         addSubview(loadingIndicator)
         bottomView.addSubview(timeSlider)
-        
-        let playImage = VGPlayerUtils.imageResource("VGPlayer_ic_play")
-        let pauseImage = VGPlayerUtils.imageResource("VGPlayer_ic_pause")
-        playButtion.setImage(VGPlayerUtils.imageSize(image: playImage!, scaledToSize: CGSize(width: 15, height: 15)), for: .normal)
-        playButtion.setImage(VGPlayerUtils.imageSize(image: pauseImage!, scaledToSize: CGSize(width: 15, height: 15)), for: .selected)
-        playButtion.addTarget(self, action: #selector(onPlayerButton(_:)), for: .touchUpInside)
-        bottomView.addSubview(playButtion)
         
         timeLabel.textAlignment = .center
         timeLabel.textColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
@@ -709,6 +726,13 @@ extension VGPlayerView {
             make.centerY.equalTo(strongSelf.closeButton.snp.centerY)
         }
         
+        centerView.snp.makeConstraints { [weak self] (make) in
+            guard let strongSelf = self else { return }
+            make.center.equalTo(strongSelf)
+            make.width.equalTo(50)
+            make.height.equalTo(50)
+        }
+        
         // bottom view layout
         bottomView.snp.makeConstraints { [weak self] (make) in
             guard let strongSelf = self else { return }
@@ -720,32 +744,32 @@ extension VGPlayerView {
         
         playButtion.snp.makeConstraints { [weak self] (make) in
             guard let strongSelf = self else { return }
-            make.left.equalTo(strongSelf.bottomView).offset(20)
-            make.height.equalTo(25)
-            make.width.equalTo(25)
-            make.centerY.equalTo(strongSelf.bottomView)
+            make.center.equalTo(strongSelf.centerView)
+            make.height.equalTo(50)
+            make.width.equalTo(50)
+            make.centerY.equalTo(strongSelf.centerView)
         }
         
         timeLabel.snp.makeConstraints { [weak self] (make) in
             guard let strongSelf = self else { return }
             make.right.equalTo(strongSelf.fullscreenButton.snp.left).offset(-10)
-            make.centerY.equalTo(strongSelf.playButtion)
+            make.centerY.equalTo(strongSelf.bottomView)
             make.height.equalTo(30)
         }
         
         timeSlider.snp.makeConstraints { [weak self] (make) in
             guard let strongSelf = self else { return }
-            make.centerY.equalTo(strongSelf.playButtion)
+            make.centerY.equalTo(strongSelf.timeLabel)
             make.right.equalTo(strongSelf.timeLabel.snp.left).offset(-10)
-            make.left.equalTo(strongSelf.playButtion.snp.right).offset(25)
+            make.left.equalTo(strongSelf.bottomView).offset(20)
             make.height.equalTo(25)
         }
         fullscreenButton.snp.makeConstraints { [weak self] (make) in
             guard let strongSelf = self else { return }
-            make.centerY.equalTo(strongSelf.playButtion)
+            make.centerY.equalTo(strongSelf.timeLabel)
             make.right.equalTo(strongSelf.bottomView).offset(-10)
-            make.height.equalTo(30)
-            make.width.equalTo(30)
+            make.height.equalTo(45)
+            make.width.equalTo(45)
         }
         
         loadingIndicator.snp.makeConstraints { [weak self] (make) in
